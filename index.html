@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golf Impact Physics & Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body { margin: 0; overflow-x: hidden; background-color: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        canvas { display: block; width: 100%; height: 100%; outline: none; }
+        
+        /* Custom Scrollbar for dark theme */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <!-- Header & Navigation -->
+    <header class="bg-slate-900 border-b border-slate-700 shadow-lg z-10 flex-shrink-0">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                    <span class="font-bold text-xl tracking-tight text-white">AeroGolf <span class="text-blue-500 text-sm">SimDynamics</span></span>
+                </div>
+                <nav class="flex space-x-1 sm:space-x-4">
+                    <button onclick="switchTab('theory')" id="tab-theory" class="px-3 py-2 rounded-md text-sm font-medium bg-blue-600 text-white transition-colors">Physics & Theory</button>
+                    <button onclick="switchTab('simulation')" id="tab-simulation" class="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">COMSOL 3D Impact FEA</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow relative overflow-hidden flex">
+        
+        <!-- PAGE 1: Theory & Physics -->
+        <div id="theory" class="tab-content active w-full h-full overflow-y-auto bg-slate-900 p-6 sm:p-10">
+            <div class="max-w-5xl mx-auto space-y-12">
+                <div class="text-center space-y-4">
+                    <h1 class="text-4xl font-extrabold text-white">The Physics of the Golf Swing</h1>
+                    <p class="text-xl text-slate-400 max-w-3xl mx-auto">Understanding the collision dynamics, material deformation, and aerodynamic forces that dictate the flight of a golf ball.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm">
+                        <h2 class="text-2xl font-bold text-blue-400 mb-4">1. The Impact (Collision Dynamics)</h2>
+                        <p class="text-slate-300 mb-4">
+                            The collision between a golf club and ball lasts approximately <strong>400 to 500 microseconds</strong>. During this brief window, peak forces can exceed <strong>10,000 Newtons (over 2,000 lbs)</strong>.
+                        </p>
+                        <ul class="list-disc pl-5 text-slate-300 space-y-2">
+                            <li><strong>Coefficient of Restitution (COR):</strong> Measures the energy transfer efficiency. USGA limits COR to 0.830.</li>
+                            <li><strong>Smash Factor:</strong> Ball Speed divided by Club Speed. Ideal is ~1.50 for a driver.</li>
+                            <li><strong>Deformation:</strong> The ball flattens against the clubface, converting kinetic energy into elastic potential energy before springing back (restitution).</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm flex flex-col justify-center items-center">
+                        <!-- SVG Diagram of Forces -->
+                        <svg viewBox="0 0 400 300" class="w-full h-64">
+                            <!-- Club Head -->
+                            <path d="M 50 100 Q 150 150 180 200 L 150 220 Q 50 170 30 120 Z" fill="#64748b" />
+                            <!-- Deformed Ball -->
+                            <ellipse cx="220" cy="190" rx="30" ry="45" fill="#f8fafc" transform="rotate(-20 220 190)" />
+                            <!-- Force Vectors -->
+                            <line x1="180" y1="200" x2="280" y2="160" stroke="#ef4444" stroke-width="4" marker-end="url(#arrow-red)" />
+                            <text x="250" y="150" fill="#ef4444" font-weight="bold">Normal Force</text>
+                            
+                            <line x1="200" y1="210" x2="240" y2="280" stroke="#3b82f6" stroke-width="3" marker-end="url(#arrow-blue)" />
+                            <text x="210" y="295" fill="#3b82f6" font-weight="bold">Friction (Spin)</text>
+                            
+                            <defs>
+                                <marker id="arrow-red" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444" />
+                                </marker>
+                                <marker id="arrow-blue" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
+                                </marker>
+                            </defs>
+                        </svg>
+                        <p class="text-sm text-slate-400 mt-4">Vector diagram showing Normal Force causing compression and Friction causing backspin.</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm mt-8">
+                    <h2 class="text-2xl font-bold text-blue-400 mb-4">2. In-Flight Aerodynamics</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <h3 class="font-bold text-white mb-2">Gravity ($F_g$)</h3>
+                            <p class="text-slate-400 text-sm">Constant downward force ($mg$). Counteracted only by the lift generated by the ball's backspin.</p>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white mb-2">Drag Force ($F_d$)</h3>
+                            <p class="text-slate-400 text-sm">Air resistance opposing the motion. Dimples create a turbulent boundary layer, delaying flow separation and drastically reducing wake drag.</p>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white mb-2">Magnus Effect (Lift - $F_l$)</h3>
+                            <p class="text-slate-400 text-sm">Backspin causes higher air pressure under the ball and lower pressure above it, generating upward lift, keeping the ball in the air longer.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 2: COMSOL 3D Simulation -->
+        <div id="simulation" class="tab-content w-full h-full relative flex flex-col md:flex-row">
+            
+            <!-- Sidebar Controls -->
+            <div class="w-full md:w-80 bg-slate-800 border-r border-slate-700 p-6 flex flex-col gap-6 z-10 shrink-0 shadow-2xl overflow-y-auto">
+                <div>
+                    <h2 class="text-xl font-bold text-white mb-1">Impact Analysis</h2>
+                    <p class="text-xs text-blue-400 font-mono mb-4">FEA Simulation Mode</p>
+                    <p class="text-sm text-slate-300">
+                        This environment simulates the extreme localized deformation during the 0.5ms impact window. 
+                        Colors represent Von Mises stress / structural strain.
+                    </p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1 flex justify-between">
+                            Club Speed 
+                            <span id="speedVal" class="text-blue-400 font-mono">100 mph</span>
+                        </label>
+                        <input type="range" id="clubSpeed" min="50" max="150" value="100" class="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1 flex justify-between">
+                            Material Stiffness (Core)
+                            <span id="stiffnessVal" class="text-blue-400 font-mono">Medium</span>
+                        </label>
+                        <input type="range" id="ballStiffness" min="1" max="100" value="50" class="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-700">
+                        <button id="btnSwing" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all transform hover:scale-105 active:scale-95 flex justify-center items-center gap-2">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                            Simulate Impact
+                        </button>
+                        <button id="btnReset" class="w-full mt-3 bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                            Reset View
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-6">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Stress Heatmap Legend</h3>
+                    <div class="h-4 w-full rounded bg-gradient-to-r from-blue-600 via-green-400 to-red-600"></div>
+                    <div class="flex justify-between text-xs text-slate-400 mt-1 font-mono">
+                        <span>Low (0 MPa)</span>
+                        <span>High (Max MPa)</span>
+                    </div>
+                </div>
+                
+                <div class="text-xs text-slate-500 mt-2">
+                    <p>Left-click + Drag: Rotate Camera</p>
+                    <p>Scroll: Zoom</p>
+                </div>
+            </div>
+
+            <!-- 3D Canvas Container -->
+            <div id="canvas-container" class="flex-grow h-[50vh] md:h-full relative bg-slate-950">
+                <!-- ThreeJS renders here -->
+                <div id="sim-stats" class="absolute top-4 right-4 bg-slate-900/80 backdrop-blur border border-slate-700 p-3 rounded-lg text-xs font-mono text-slate-300 pointer-events-none z-10 hidden">
+                    <div class="text-blue-400 font-bold mb-1 border-b border-slate-700 pb-1">Solver Output</div>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-1">
+                        <span>Time:</span> <span id="outTime" class="text-right text-white">0.00 ms</span>
+                        <span>Max Def:</span> <span id="outDef" class="text-right text-white">0.00 mm</span>
+                        <span>Max Force:</span> <span id="outForce" class="text-right text-white">0 N</span>
+                        <span>Ball Vel:</span> <span id="outVel" class="text-right text-white">0 mph</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- UI Logic ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+            
+            // Update nav buttons
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('text-slate-300', 'hover:bg-slate-800');
+            });
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-800');
+            activeBtn.classList.add('bg-blue-600', 'text-white');
+
+            // Handle 3D resize if switching to simulation tab
+            if(tabId === 'simulation' && isSimulationInitialized) {
+                resizeCanvas();
+            } else if (tabId === 'simulation' && !isSimulationInitialized) {
+                initSimulation();
+            }
+        }
+
+        // --- 3D Simulation Logic ---
+        let isSimulationInitialized = false;
+        let scene, camera, renderer, controls;
+        let ball, clubGroup, clubFace;
+        let basePositions; // Original ball geometry
+        let colorsAttribute;
+        
+        // Physics constants & state
+        const ballRadius = 2.1;
+        let isSwinging = false;
+        let simState = 'idle'; // idle, swinging, impact, flying
+        let time = 0;
+        
+        let simData = {
+            clubX: -15,
+            clubSpeedX: 0,
+            ballX: 0,
+            ballVelX: 0,
+            maxDeformation: 0,
+            impactDuration: 0,
+            stiffnessModifier: 1.0
+        };
+
+        // UI Listeners
+        document.getElementById('clubSpeed').addEventListener('input', (e) => {
+            document.getElementById('speedVal').innerText = `${e.target.value} mph`;
+        });
+        document.getElementById('ballStiffness').addEventListener('input', (e) => {
+            let val = parseInt(e.target.value);
+            let text = val < 33 ? "Soft" : (val < 66 ? "Medium" : "Hard");
+            document.getElementById('stiffnessVal').innerText = text;
+            // Map 1-100 to 0.5 - 1.5 multiplier
+            simData.stiffnessModifier = 0.5 + (val / 100); 
+        });
+
+        document.getElementById('btnSwing').addEventListener('click', () => {
+            if (simState === 'idle') startSwing();
+        });
+
+        document.getElementById('btnReset').addEventListener('click', resetSimulation);
+
+        function initSimulation() {
+            const container = document.getElementById('canvas-container');
+            
+            // 1. Scene Setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020617); // Slate 950
+            // Subtle grid for "software" look
+            const gridHelper = new THREE.GridHelper(50, 50, 0x1e293b, 0x0f172a);
+            gridHelper.position.y = -3;
+            scene.add(gridHelper);
+
+            // 2. Camera Setup
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 5, 15);
+
+            // 3. Renderer Setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // 4. Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxDistance = 50;
+
+            // 5. Lighting (Simulation style - clear, functional lighting)
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            scene.add(dirLight);
+            
+            const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            fillLight.position.set(-10, 0, -10);
+            scene.add(fillLight);
+
+            // 6. Create Mesh Objects
+            createGolfBall();
+            createClub();
+
+            // Resize listener
+            window.addEventListener('resize', resizeCanvas);
+
+            isSimulationInitialized = true;
+            
+            // Show stats panel
+            document.getElementById('sim-stats').classList.remove('hidden');
+
+            // Start Loop
+            animate();
+        }
+
+        function createGolfBall() {
+            // High segment count needed for smooth deformation (FEA style)
+            const geometry = new THREE.SphereGeometry(ballRadius, 64, 64);
+            
+            // Store original positions for deformation math
+            basePositions = geometry.attributes.position.clone();
+            
+            // Setup vertex colors attribute for heat map
+            const count = geometry.attributes.position.count;
+            colorsAttribute = new Float32Array(count * 3);
+            
+            // Initialize all to dark blue (low stress)
+            for(let i=0; i<count; i++) {
+                colorsAttribute[i*3] = 0;     // R
+                colorsAttribute[i*3+1] = 0.2; // G
+                colorsAttribute[i*3+2] = 0.8; // B
+            }
+            geometry.setAttribute('color', new THREE.BufferAttribute(colorsAttribute, 3));
+
+            // Material config to look like a glossy simulation mesh
+            const material = new THREE.MeshPhongMaterial({
+                vertexColors: true,
+                shininess: 80,
+                specular: 0x444444,
+                wireframe: false // Can toggle this for ultimate FEA look
+            });
+
+            ball = new THREE.Mesh(geometry, material);
+            scene.add(ball);
+        }
+
+        function createClub() {
+            clubGroup = new THREE.Group();
+            
+            // Club face (the part that impacts)
+            const faceGeo = new THREE.BoxGeometry(2, 6, 4);
+            const faceMat = new THREE.MeshStandardMaterial({ 
+                color: 0x94a3b8, // Slate 400
+                metalness: 0.8,
+                roughness: 0.3
+            });
+            clubFace = new THREE.Mesh(faceGeo, faceMat);
+            clubGroup.add(clubFace);
+
+            // Club shaft
+            const shaftGeo = new THREE.CylinderGeometry(0.3, 0.3, 15);
+            const shaftMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.9 });
+            const shaft = new THREE.Mesh(shaftGeo, shaftMat);
+            shaft.position.set(0, 10, 0);
+            shaft.rotation.z = -0.1;
+            clubGroup.add(shaft);
+
+            // Add mesh lines to face to look technical
+            const edges = new THREE.EdgesGeometry(faceGeo);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.5, transparent: true }));
+            clubGroup.add(line);
+
+            // Initial position (left of ball)
+            clubGroup.position.set(simData.clubX, 0, 0);
+            // Slight loft angle
+            clubGroup.rotation.z = -0.2; 
+            
+            scene.add(clubGroup);
+        }
+
+        function resizeCanvas() {
+            if(!isSimulationInitialized) return;
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // HSV to RGB helper for heat map
+        function colorToRGB(h, s, v) {
+            let r, g, b, i, f, p, q, t;
+            i = Math.floor(h * 6);
+            f = h * 6 - i;
+            p = v * (1 - s);
+            q = v * (1 - f * s);
+            t = v * (1 - (1 - f) * s);
+            switch (i % 6) {
+                case 0: r = v, g = t, b = p; break;
+                case 1: r = q, g = v, b = p; break;
+                case 2: r = p, g = v, b = t; break;
+                case 3: r = p, g = q, b = v; break;
+                case 4: r = t, g = p, b = v; break;
+                case 5: r = v, g = p, b = q; break;
+            }
+            return [r, g, b];
+        }
+
+        function updateDeformation(impactDepth) {
+            if (!ball) return;
+            
+            const positions = ball.geometry.attributes.position;
+            const colors = ball.geometry.attributes.color;
+            const count = positions.count;
+
+            let maxLocalDef = 0;
+
+            for (let i = 0; i < count; i++) {
+                // Get original vertex position relative to ball center
+                let x = basePositions.getX(i);
+                let y = basePositions.getY(i);
+                let z = basePositions.getZ(i);
+
+                // Calculate displacement based on impact depth.
+                // The club comes from negative X towards positive X.
+                // The impact face is roughly at clubGroup.position.x + 1 (half width of clubface).
+                
+                let worldX = ball.position.x + x;
+                let clubFaceWorldX = clubGroup.position.x + 1; // Approximate flat face
+
+                let displacement = 0;
+                
+                // If vertex is "inside" the club face (being crushed)
+                if (simState === 'impact' && worldX < clubFaceWorldX) {
+                    // Squash the vertex flat against the face
+                    displacement = clubFaceWorldX - worldX;
+                    x += displacement; // Push right
+                    
+                    // Poisson effect - material expands outward in Y/Z when compressed in X
+                    // Falloff based on how close to center of impact
+                    const distFromCenterY = Math.abs(y);
+                    const distFromCenterZ = Math.abs(z);
+                    const poissonRatio = 0.45; // Rubber/Surlyn
+                    
+                    y += Math.sign(y) * (displacement * poissonRatio * (1 - distFromCenterY/ballRadius));
+                    z += Math.sign(z) * (displacement * poissonRatio * (1 - distFromCenterZ/ballRadius));
+                    
+                } else if (simState === 'flying' && impactDepth > 0) {
+                    // Restitution phase - springing back
+                    // impactDepth here acts as a decaying factor
+                    const originalDistFromLeft = ballRadius + basePositions.getX(i); // 0 at far left, 2R at far right
+                    
+                    // Only apply to left side that was hit
+                    if (originalDistFromLeft < ballRadius) {
+                        // Apply decaying deformation
+                        let maxDist = (ballRadius - originalDistFromLeft); 
+                        displacement = maxDist * impactDepth; // impactDepth goes 1.0 -> 0.0
+                        x += displacement;
+                        
+                        y += Math.sign(y) * (displacement * 0.45 * (1 - Math.abs(y)/ballRadius));
+                        z += Math.sign(z) * (displacement * 0.45 * (1 - Math.abs(z)/ballRadius));
+                    }
+                }
+
+                if (displacement > maxLocalDef) maxLocalDef = displacement;
+
+                // Update geometry
+                positions.setXYZ(i, x, y, z);
+
+                // Update color based on displacement magnitude (Stress map)
+                // Map displacement (0 to ~1.5) to Hue (0.6 Blue to 0.0 Red)
+                const maxExpectedDisp = 1.2;
+                let normalizedDisp = Math.min(displacement / maxExpectedDisp, 1.0);
+                
+                // Base color (idle/recovering) vs Active Stress
+                let h = 0.6 - (normalizedDisp * 0.6); // Blue to Red
+                let s = 0.8 + (normalizedDisp * 0.2); // Increase saturation at high stress
+                let v = 0.8 + (normalizedDisp * 0.2); // Increase brightness at high stress
+                
+                // Add some ambient "residual" stress during flying phase based on speed
+                if (simState === 'flying' && normalizedDisp === 0) {
+                     h = 0.6; s = 0.8; v = 0.8;
+                } else if (simState === 'idle') {
+                     h = 0.6; s = 0.8; v = 0.8;
+                }
+
+                let [r, g, b] = colorToRGB(h, s, v);
+                colors.setXYZ(i, r, g, b);
+            }
+
+            positions.needsUpdate = true;
+            colors.needsUpdate = true;
+            ball.geometry.computeVertexNormals(); // Fix lighting on deformed mesh
+
+            // Update Max Deformation stats tracking
+            if (maxLocalDef > simData.maxDeformation) {
+                simData.maxDeformation = maxLocalDef;
+            }
+        }
+
+        function startSwing() {
+            resetSimulation();
+            
+            // Read UI inputs
+            const rawSpeed = parseFloat(document.getElementById('clubSpeed').value);
+            // Convert to simulation speed units
+            simData.clubSpeedX = rawSpeed * 0.015; 
+            
+            simState = 'swinging';
+            
+            // Button visual update
+            const btn = document.getElementById('btnSwing');
+            btn.innerHTML = 'Computing...';
+            btn.classList.replace('bg-blue-600', 'bg-orange-500');
+            btn.classList.replace('hover:bg-blue-500', 'hover:bg-orange-400');
+        }
+
+        function resetSimulation() {
+            simState = 'idle';
+            time = 0;
+            simData.clubX = -15;
+            simData.ballX = 0;
+            simData.ballVelX = 0;
+            simData.maxDeformation = 0;
+            simData.impactDuration = 0;
+            
+            if(clubGroup) clubGroup.position.set(simData.clubX, 0, 0);
+            if(ball) ball.position.set(0, 0, 0);
+            
+            updateDeformation(0);
+            updateStatsUI();
+
+            const btn = document.getElementById('btnSwing');
+            btn.innerHTML = `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg> Simulate Impact`;
+            btn.classList.replace('bg-orange-500', 'bg-blue-600');
+            btn.classList.replace('hover:bg-orange-400', 'hover:bg-blue-500');
+        }
+
+        function updateStatsUI() {
+            document.getElementById('outTime').innerText = (time * 10).toFixed(2) + " ms";
+            // Convert arbitrary units to mm
+            document.getElementById('outDef').innerText = (simData.maxDeformation * 12.5).toFixed(2) + " mm"; 
+            // Fake force calculation based on deformation and stiffness
+            let force = Math.floor(simData.maxDeformation * 8000 * simData.stiffnessModifier);
+            document.getElementById('outForce').innerText = force.toLocaleString() + " N";
+            // Ball vel in mph
+            document.getElementById('outVel').innerText = Math.floor(simData.ballVelX * 100) + " mph";
+        }
+
+        // Main Simulation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (!isSimulationInitialized) return;
+
+            // Physics step
+            if (simState === 'swinging') {
+                simData.clubX += simData.clubSpeedX;
+                clubGroup.position.x = simData.clubX;
+
+                // Check collision (Club face is at clubX + 1, ball left edge is at ballX - radius)
+                if (simData.clubX + 1 > simData.ballX - ballRadius) {
+                    simState = 'impact';
+                }
+            } 
+            else if (simState === 'impact') {
+                time += 0.01;
+                simData.impactDuration += 0.01;
+                
+                // Club decelerates slightly upon impact
+                simData.clubSpeedX *= 0.98; 
+                simData.clubX += simData.clubSpeedX;
+                clubGroup.position.x = simData.clubX;
+
+                // Calculate overlap / compression depth
+                let overlap = (simData.clubX + 1) - (simData.ballX - ballRadius);
+                
+                // Apply deformation visually based on position
+                updateDeformation(overlap);
+
+                // Accumulate energy into the ball based on stiffness
+                simData.ballVelX += (overlap * 0.1) * (1 / simData.stiffnessModifier);
+
+                // Restitution: When ball velocity exceeds club velocity, it detaches
+                if (simData.ballVelX > simData.clubSpeedX && simData.impactDuration > 0.1) {
+                    simState = 'flying';
+                    // Smash factor multiplier
+                    let smashFactor = 1.45 + (Math.random() * 0.05); // slightly random
+                    simData.ballVelX = parseFloat(document.getElementById('clubSpeed').value) * 0.015 * smashFactor;
+                    simData.decayFactor = 1.0; // For spring-back animation
+                }
+                
+                updateStatsUI();
+            }
+            else if (simState === 'flying') {
+                time += 0.01;
+                
+                // Ball flies away
+                simData.ballX += simData.ballVelX;
+                ball.position.x = simData.ballX;
+                
+                // Add spin (Magnus effect visual)
+                ball.rotation.z += simData.ballVelX * 0.2;
+                ball.position.y += simData.ballVelX * 0.05; // Lift
+
+                // Club follows through slowly
+                simData.clubX += simData.clubSpeedX * 0.5;
+                clubGroup.position.x = simData.clubX;
+
+                // Restitution visual (springing back to sphere)
+                if (simData.decayFactor > 0) {
+                    simData.decayFactor -= 0.05;
+                    if (simData.decayFactor < 0) simData.decayFactor = 0;
+                    updateDeformation(simData.decayFactor);
+                } else {
+                    // Ensure it's perfectly round again
+                    if(ball.geometry.attributes.position.needsUpdate) updateDeformation(0);
+                }
+
+                updateStatsUI();
+
+                // Auto reset if ball goes too far
+                if (simData.ballX > 50) {
+                    simState = 'finished';
+                }
+            }
+
+            // Update Camera Controls
+            controls.update();
+
+            // Render
+            renderer.render(scene, camera);
+        }
+        
+    </script>
+</body>
+</html>
