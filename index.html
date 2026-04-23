@@ -73,6 +73,16 @@
                 </div>
 
                 <div>
+                    <label class="block text-xs text-slate-400 mb-2">Club Selection</label>
+                    <select id="clubSelect" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white font-mono focus:outline-none focus:border-blue-500 mb-4">
+                        <option value="driver">Driver (10.5&deg;)</option>
+                        <option value="iron4">4 Iron (22&deg;)</option>
+                        <option value="iron7" selected>7 Iron (34&deg;)</option>
+                        <option value="pw">Pitching Wedge (46&deg;)</option>
+                    </select>
+                </div>
+
+                <div>
                     <label class="block text-xs text-slate-400 mb-2">Impact Velocity (mph)</label>
                     <input type="number" id="impactSpeedMph" min="5" max="250" value="100" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white font-mono focus:outline-none focus:border-blue-500">
                 </div>
@@ -99,7 +109,7 @@
         <main id="canvas-container">
             <div class="absolute top-6 right-6 text-right pointer-events-none z-10">
                 <div class="text-4xl font-light text-slate-700 select-none uppercase">Impact Modeling</div>
-                <div class="text-sm text-slate-500 font-mono">7-Iron & Molecular Displacement</div>
+                <div id="hud-club-text" class="text-sm text-slate-500 font-mono">7 Iron (34&deg;) & Molecular Displacement</div>
             </div>
         </main>
     </div>
@@ -204,13 +214,24 @@
         }
 
         // --- 2D Graph Flight Animation & Math Logic ---
+        
+        // Club Physics Data
+        const CLUBS = {
+            'driver': { loft: 10.5, multiplier: 2.5, rad: 10.5 * Math.PI/180, visualLoft: -0.18 },
+            'iron4':  { loft: 22.0, multiplier: 1.9, rad: 22.0 * Math.PI/180, visualLoft: -0.38 },
+            'iron7':  { loft: 34.0, multiplier: 1.6, rad: 34.0 * Math.PI/180, visualLoft: -0.60 },
+            'pw':     { loft: 46.0, multiplier: 1.3, rad: 46.0 * Math.PI/180, visualLoft: -0.80 }
+        };
+
         function updateGraphPaths() {
             let mph = parseFloat(document.getElementById('impactSpeedMph').value) || 100;
+            let clubKey = document.getElementById('clubSelect').value;
+            let clubParams = CLUBS[clubKey];
             
-            // Physics constraints based on 7-Iron mappings
-            let carryYards = mph * 1.6; // ~160 yds at 100 mph
-            let noAirCarryYards = carryYards * 0.55; // Vacuum flight is shorter due to no Magnus lift
-            let apexYards = mph * 0.32; // ~32 yds apex at 100mph
+            // Physics constraints based on club mappings
+            let carryYards = mph * clubParams.multiplier; 
+            let noAirCarryYards = carryYards * 0.55; 
+            let apexYards = carryYards * 0.20; // Apex scales roughly with distance
 
             // Convert to SVG pixels (1 Yard = 4 Pixels)
             const YARD_TO_PX = 4;
@@ -472,8 +493,11 @@
             const headGeo = new THREE.BoxGeometry(1.5, 3.5, 4.5);
             const headMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.2 });
             const head = new THREE.Mesh(headGeo, headMat);
+            head.name = 'clubHead'; // Named for easy retrieval later
             head.position.set(0, 0, 0);
-            head.rotation.z = -0.6; // 35 degree loft
+            
+            let currentClub = document.getElementById('clubSelect').value;
+            head.rotation.z = CLUBS[currentClub].visualLoft; 
             club.add(head);
 
             club.position.set(simData.clubX, 0, 0);
@@ -517,13 +541,16 @@
 
             const dt = document.getElementById('simSpeed').value / 100;
             
+            let clubKey = document.getElementById('clubSelect').value;
+            let clubParams = CLUBS[clubKey];
+            
             // Scaled Physical constants based on MPH
             const swingSpeed = simData.mph * 0.045; 
             const GRAVITY = 0.06; // Constant gravity pulling down every frame
-            const LOFT_RAD = 0.6; // ~34.4 degrees (7-iron loft)
+            const LOFT_RAD = clubParams.rad; 
             
-            // Ensure 3D physics perfectly matches the 2D Graph's exact carry (mph * 1.6)
-            let targetCarry = simData.mph * 1.6;
+            // Ensure 3D physics perfectly matches the 2D Graph's exact carry
+            let targetCarry = simData.mph * clubParams.multiplier;
             // Reverse-engineer the required launch velocity to achieve this exact distance 
             // Formula: Distance = (v^2 * sin(2*theta)) / g  =>  v = sqrt( (D*g)/sin(2*theta) )
             const launchVelocity = Math.sqrt((targetCarry * GRAVITY) / Math.sin(LOFT_RAD * 2));
@@ -579,7 +606,7 @@
                     ballGroup.position.y = 0; // lock to floor
                     
                     // Snap to exact mathematical carry to eliminate Euler 3D integration micro-errors
-                    let exactCarry = simData.mph * 1.6;
+                    let exactCarry = simData.mph * clubParams.multiplier;
                     ballGroup.position.x = exactCarry;
                     document.getElementById('carryRead').innerText = exactCarry.toFixed(1);
                     
@@ -664,8 +691,27 @@
             }
         });
 
-        // Update Graph whenever the MPH input changes
+        // Event Listeners for UI Updates
         document.getElementById('impactSpeedMph').addEventListener('input', updateGraphPaths);
+        
+        document.getElementById('clubSelect').addEventListener('change', () => {
+            updateGraphPaths();
+            
+            // Update 3D Club visual loft
+            if (club) {
+                let currentClub = document.getElementById('clubSelect').value;
+                let head = club.getObjectByName('clubHead');
+                if (head) head.rotation.z = CLUBS[currentClub].visualLoft;
+            }
+            
+            // Reset lab if changing clubs mid-swing
+            if (simState !== 'idle') resetLab();
+            
+            // Update HUD
+            let selectElem = document.getElementById('clubSelect');
+            let clubName = selectElem.options[selectElem.selectedIndex].text;
+            document.getElementById('hud-club-text').innerHTML = clubName + " & Molecular Displacement";
+        });
         
         // Init calls
         updateGraphPaths();
