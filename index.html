@@ -13,23 +13,42 @@
         .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(51, 65, 85, 0.5); }
         input[type=range] { appearance: none; background: #334155; height: 4px; border-radius: 2px; }
         input[type=range]::-webkit-slider-thumb { appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #3b82f6; cursor: pointer; }
+        
+        /* View Toggle Utilities */
+        .view-hidden { display: none !important; }
+        .nav-tab { border-bottom: 2px solid transparent; padding-bottom: 4px; transition: all 0.2s; }
+        .nav-tab:hover { color: #fff; }
+        
+        /* Custom scrollbar for theory view */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
 </head>
 <body>
 
-    <nav class="h-14 glass-panel border-b border-slate-700 flex items-center justify-between px-6 z-50">
+    <!-- Top Navigation Bar -->
+    <nav class="h-16 glass-panel border-b border-slate-700 flex items-center justify-between px-6 z-50 shrink-0">
         <div class="flex items-center gap-2">
             <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-            <h1 class="font-bold tracking-tight text-lg">ATOM-STRUC <span class="text-slate-400 font-light">v2.0</span></h1>
+            <h1 class="font-bold tracking-tight text-lg">ATOM-STRUC <span class="text-slate-400 font-light">v2.1</span></h1>
         </div>
+        
+        <div class="flex gap-8 font-semibold text-sm text-slate-400">
+            <button id="btn-lab" onclick="switchView('lab')" class="nav-tab text-white border-blue-500">3D Impact Lab</button>
+            <button id="btn-theory" onclick="switchView('theory')" class="nav-tab">Physics & Flight Path</button>
+        </div>
+
         <div class="flex gap-4">
-            <button onclick="window.location.reload()" class="text-xs uppercase tracking-widest text-slate-400 hover:text-white transition">Reset Lab</button>
+            <button onclick="window.location.reload()" class="text-xs uppercase tracking-widest text-slate-400 hover:text-white transition">Reset Env</button>
         </div>
     </nav>
 
-    <div class="flex flex-grow overflow-hidden">
+    <!-- VIEW 1: 3D Impact Simulation Lab -->
+    <div id="view-lab" class="flex flex-grow overflow-hidden">
         
-        <aside class="w-80 glass-panel m-4 rounded-2xl p-6 flex flex-col gap-6 shadow-2xl z-20">
+        <aside class="w-80 glass-panel m-4 rounded-2xl p-6 flex flex-col gap-6 shadow-2xl z-20 shrink-0">
             <section>
                 <h2 class="text-blue-400 text-xs font-bold uppercase tracking-widest mb-2">Molecular Dynamics</h2>
                 <p class="text-sm text-slate-300 leading-relaxed">
@@ -42,7 +61,7 @@
 
             <section class="space-y-4">
                 <div>
-                    <label class="block text-xs text-slate-400 mb-2">Simulation Speed</label>
+                    <label class="block text-xs text-slate-400 mb-2">Time Scaler (Simulation Speed)</label>
                     <input type="range" id="simSpeed" min="1" max="100" value="10" class="w-full">
                     <div class="flex justify-between text-[10px] mt-1 text-blue-500 font-mono">
                         <span>SLOW-MO</span>
@@ -70,25 +89,138 @@
         </aside>
 
         <main id="canvas-container">
-            <div class="absolute top-6 right-6 text-right pointer-events-none">
+            <div class="absolute top-6 right-6 text-right pointer-events-none z-10">
                 <div class="text-4xl font-light text-slate-700 select-none uppercase">Impact Modeling</div>
                 <div class="text-sm text-slate-500 font-mono">7-Iron & Molecular Displacement</div>
             </div>
         </main>
     </div>
 
+    <!-- VIEW 2: Physics & Flight Path -->
+    <div id="view-theory" class="view-hidden flex-grow overflow-y-auto bg-slate-900 p-8">
+        <div class="max-w-5xl mx-auto space-y-12 pb-12">
+            
+            <div class="text-center space-y-4">
+                <h1 class="text-4xl font-extrabold text-white">Physics of the Golf Swing</h1>
+                <p class="text-xl text-slate-400 max-w-3xl mx-auto">From the atomic compression at impact to the aerodynamic forces shaping the flight path.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Impact Physics -->
+                <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-xl">
+                    <h2 class="text-2xl font-bold text-blue-400 mb-4">1. Energy Transfer & The Lattice</h2>
+                    <p class="text-slate-300 mb-4 leading-relaxed">
+                        When the 7-Iron collides with the ball, massive kinetic energy is transferred in less than half a millisecond. In our 3D lab, the ball is made of thousands of particles representing polymer chains.
+                    </p>
+                    <ul class="space-y-3 text-slate-300">
+                        <li class="flex gap-3"><span class="text-blue-500 font-bold">&bull;</span> <strong>Deformation:</strong> The impact side flattens entirely against the clubface.</li>
+                        <li class="flex gap-3"><span class="text-blue-500 font-bold">&bull;</span> <strong>Acoustic Shockwave:</strong> Energy travels through the core as a wave, creating high structural stress (visible as red in the 3D heatmap).</li>
+                        <li class="flex gap-3"><span class="text-blue-500 font-bold">&bull;</span> <strong>Restitution:</strong> The elastic materials rapidly expand back to a sphere, pushing off the clubface and launching the ball.</li>
+                    </ul>
+                </div>
+
+                <!-- Aerodynamics -->
+                <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-xl">
+                    <h2 class="text-2xl font-bold text-blue-400 mb-4">2. The Flight & Magnus Effect</h2>
+                    <p class="text-slate-300 mb-4 leading-relaxed">
+                        Once airborne, the trajectory is determined entirely by Initial Velocity, Gravity, and Aerodynamic forces. The club's loft imparts rapid backspin to the ball.
+                    </p>
+                    <ul class="space-y-3 text-slate-300">
+                        <li class="flex gap-3"><span class="text-blue-500 font-bold">&bull;</span> <strong>Drag ($F_D$):</strong> Air resistance pushes against the ball. Dimples help reduce the wake drag, keeping the ball flying faster.</li>
+                        <li class="flex gap-3"><span class="text-blue-500 font-bold">&bull;</span> <strong>Magnus Lift ($F_L$):</strong> The backspin forces air over the top of the ball to move faster than air under the ball. According to Bernoulli's principle, this creates low pressure above and high pressure below, generating upward lift.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Trajectory Diagram -->
+            <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-xl mt-8">
+                <h2 class="text-2xl font-bold text-white mb-6 text-center">Trajectory Comparison</h2>
+                
+                <div class="relative w-full h-80 bg-slate-900 rounded-xl overflow-hidden border border-slate-700 flex items-end pb-8">
+                    <!-- Grid background -->
+                    <div class="absolute inset-0" style="background-size: 40px 40px; background-image: linear-gradient(to right, #1e293b 1px, transparent 1px), linear-gradient(to bottom, #1e293b 1px, transparent 1px);"></div>
+                    
+                    <svg viewBox="0 0 1000 300" class="w-full h-full absolute inset-0 preserve-3d">
+                        <!-- Ground Line -->
+                        <line x1="0" y1="280" x2="1000" y2="280" stroke="#475569" stroke-width="4" />
+                        
+                        <!-- Path 1: Physics Void (Gravity Only - Parabola) -->
+                        <path d="M 50 280 Q 250 -50 450 280" fill="none" stroke="#64748b" stroke-width="3" stroke-dasharray="10 10" />
+                        <text x="350" y="240" fill="#64748b" font-family="monospace" font-size="14">No Air/Spin (Pure Parabola)</text>
+
+                        <!-- Path 2: Magnus Effect + Dimples (Real Flight) -->
+                        <!-- Steeper rise, longer hang time, sharper drop -->
+                        <path d="M 50 280 C 250 150, 400 30, 750 60 S 850 200, 880 280" fill="none" stroke="#3b82f6" stroke-width="5" />
+                        <text x="600" y="40" fill="#3b82f6" font-family="monospace" font-size="16" font-weight="bold">Magnus Lift + Dimple Aerodynamics</text>
+
+                        <!-- Ball visual on path -->
+                        <circle cx="585" cy="46" r="8" fill="#f8fafc" />
+                        <!-- Lift Vector -->
+                        <line x1="585" y1="46" x2="585" y2="10" stroke="#22c55e" stroke-width="3" marker-end="url(#arrow-green)"/>
+                        <text x="595" y="25" fill="#22c55e" font-family="monospace" font-weight="bold" font-size="14">Lift</text>
+                        <!-- Drag Vector -->
+                        <line x1="585" y1="46" x2="530" y2="46" stroke="#ef4444" stroke-width="3" marker-end="url(#arrow-red)"/>
+                        <text x="500" y="65" fill="#ef4444" font-family="monospace" font-weight="bold" font-size="14">Drag</text>
+                        
+                        <defs>
+                            <marker id="arrow-green" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#22c55e" />
+                            </marker>
+                            <marker id="arrow-red" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444" />
+                            </marker>
+                        </defs>
+                    </svg>
+
+                    <!-- Tee marker -->
+                    <div class="absolute bottom-[20px] left-[45px] w-3 h-6 bg-orange-400 rounded-t-sm"></div>
+                </div>
+                
+                <p class="text-center text-slate-400 mt-4 text-sm font-mono">
+                    The aerodynamic lift created by the rapidly spinning lattice structure extends the carry distance by over 100%.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
     <script>
+        // --- View Toggling Logic ---
+        function switchView(viewId) {
+            document.getElementById('view-lab').classList.add('view-hidden');
+            document.getElementById('view-theory').classList.add('view-hidden');
+            document.getElementById('view-' + viewId).classList.remove('view-hidden');
+
+            document.getElementById('btn-lab').classList.remove('text-white', 'border-blue-500');
+            document.getElementById('btn-theory').classList.remove('text-white', 'border-blue-500');
+            document.getElementById('btn-' + viewId).classList.add('text-white', 'border-blue-500');
+
+            // Handle WebGL Resize if returning to lab
+            if(viewId === 'lab' && renderer && camera) {
+                const container = document.getElementById('canvas-container');
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+        }
+
+        // --- 3D Physics Lab Logic ---
         let scene, camera, renderer, controls;
         let ballGroup, club;
         let atoms = [];
         let simState = 'idle'; // idle, swinging, impact, flying
         
-        const ATOM_COUNT = 3500; // Massively increased for density
+        const ATOM_COUNT = 3500;
         const BALL_RADIUS = 4.0;
+        
+        // Physics constants independent of time scaling
+        const BASE_CLUB_SPEED = 4.5;
+        const BASE_GRAVITY = 0.6;
+        const IMPACT_DURATION_LIMIT = 2.0;
         
         let simData = {
             clubX: -15,
-            clubSpeed: 0,
+            clubY: 0,
             ballVel: new THREE.Vector3(0, 0, 0),
             impactDuration: 0,
             forceInput: 5,
@@ -100,8 +232,6 @@
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-            
-            // Pulled camera back to see the club and flight
             camera.position.set(0, 8, 28);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -126,15 +256,12 @@
             ballGroup = new THREE.Group();
             scene.add(ballGroup);
 
-            // Larger spheres, tightly packed to look like one solid but granular object
             const geo = new THREE.SphereGeometry(0.3, 5, 5); 
             const mat = new THREE.MeshPhongMaterial({ color: 0x64748b, shininess: 50 });
             
-            // Generate atoms in a spherical volume
             for (let i = 0; i < ATOM_COUNT; i++) {
-                const atom = new THREE.Mesh(geo, mat.clone()); // Clone material for individual coloring
+                const atom = new THREE.Mesh(geo, mat.clone());
 
-                // Volume distribution
                 const phi = Math.acos(-1 + (2 * i) / ATOM_COUNT);
                 const theta = Math.sqrt(ATOM_COUNT * Math.PI) * phi;
                 const r = BALL_RADIUS * Math.pow(Math.random(), 0.33); 
@@ -150,14 +277,13 @@
                 };
 
                 atoms.push(atom);
-                ballGroup.add(atom); // Add to the collective group instead of scene
+                ballGroup.add(atom); 
             }
         }
 
         function createGolfClub() {
             club = new THREE.Group();
 
-            // 7-Iron Shaft
             const shaftGeo = new THREE.CylinderGeometry(0.15, 0.15, 20);
             const shaftMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.5 });
             const shaft = new THREE.Mesh(shaftGeo, shaftMat);
@@ -165,14 +291,11 @@
             shaft.rotation.z = -0.1;
             club.add(shaft);
 
-            // 7-Iron Head
             const headGeo = new THREE.BoxGeometry(1.5, 3.5, 4.5);
             const headMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.2 });
             const head = new THREE.Mesh(headGeo, headMat);
             head.position.set(0, 0, 0);
-            
-            // Apply ~35 degrees of loft (typical for a 7 iron)
-            head.rotation.z = -0.6; 
+            head.rotation.z = -0.6; // 35 degree loft
             club.add(head);
 
             club.position.set(simData.clubX, 0, 0);
@@ -192,15 +315,18 @@
         function updatePhysics() {
             if(simState === 'idle') return;
 
-            // Simulation step scale based on slider
-            const baseSpeed = document.getElementById('simSpeed').value / 100;
+            // dt (delta time) scales the execution speed without altering physics trajectory
+            // 1.0 = Real time, 0.01 = Maximum Slow motion
+            const dt = document.getElementById('simSpeed').value / 100;
+            // Calculate dynamic swing speed based on the Impact Velocity slider
+            const currentSwingSpeed = BASE_CLUB_SPEED * (simData.forceInput / 5);
 
             if (simState === 'swinging') {
-                simData.clubSpeed = baseSpeed * 3.0; // visual swing speed
-                simData.clubX += simData.clubSpeed;
+                // Update position using dynamic swing velocity * time step
+                simData.clubX += currentSwingSpeed * dt;
                 club.position.x = simData.clubX;
 
-                // Detect Collision (Club face is roughly at clubX + 0.8)
+                // Detect Collision 
                 if (simData.clubX + 0.8 > ballGroup.position.x - BALL_RADIUS) {
                     simState = 'impact';
                     simData.waveActive = true;
@@ -209,102 +335,105 @@
                 }
             } 
             else if (simState === 'impact') {
-                simData.impactDuration += simData.clubSpeed;
+                // Advance impact duration tracker
+                simData.impactDuration += currentSwingSpeed * dt;
                 
-                // Club pushes forward, transferring energy
-                simData.clubX += simData.clubSpeed * 0.3;
+                // Club pushes forward slower during deformation
+                simData.clubX += (currentSwingSpeed * 0.3) * dt;
                 club.position.x = simData.clubX;
 
-                // Detachment point (when energy is fully transferred)
-                if (simData.impactDuration > 1.8) {
+                // Detachment point
+                if (simData.impactDuration > IMPACT_DURATION_LIMIT) {
                     simState = 'flying';
                     
                     // Launch based on 7-Iron Loft (~35 degrees / 0.6 rad)
-                    let launchSpeed = baseSpeed * simData.forceInput * 0.4;
-                    simData.ballVel.set(launchSpeed * Math.cos(0.6), launchSpeed * Math.sin(0.6), 0);
+                    // Launch speed scales with the chosen impact force
+                    let launchVelocity = simData.forceInput * 0.6;
+                    simData.ballVel.set(launchVelocity * Math.cos(0.6), launchVelocity * Math.sin(0.6), 0);
                 }
             } 
             else if (simState === 'flying') {
-                // Entire entity moves together
-                ballGroup.position.add(simData.ballVel);
+                // Time-integrated position update ensures identical flight curves
+                ballGroup.position.x += simData.ballVel.x * dt;
+                ballGroup.position.y += simData.ballVel.y * dt;
+                ballGroup.position.z += simData.ballVel.z * dt;
                 
-                // Add aerodynamic backspin to the entity
-                ballGroup.rotation.z += simData.ballVel.x * 0.04;
+                // Rotation based on time
+                ballGroup.rotation.z += simData.ballVel.x * 0.05 * dt;
 
-                // Simple Gravity acting on the collective mass
-                simData.ballVel.y -= 0.01 * baseSpeed; 
+                // Time-integrated gravity
+                simData.ballVel.y -= BASE_GRAVITY * dt; 
 
-                // Club Follow-through
-                simData.clubX += simData.clubSpeed * 0.5;
+                // Club Follow-through: normal swing path (slight lift, max 30 deg rotation)
+                simData.clubX += (currentSwingSpeed * 0.4) * dt;
+                simData.clubY += (currentSwingSpeed * 0.15) * dt;
                 club.position.x = simData.clubX;
-                club.rotation.z += 0.015 * baseSpeed; // Club head rotates up slightly
+                club.position.y = simData.clubY;
+                if (club.rotation.z < 0.5) {
+                    club.rotation.z += 0.8 * dt; 
+                } 
 
                 // Auto-reset UI when ball is far away
                 if (ballGroup.position.x > 50) {
                     document.getElementById('impactBtn').innerHTML = 'INITIATE IMPACT';
                     document.getElementById('impactBtn').classList.replace('bg-orange-500', 'bg-blue-600');
                     
-                    // Reset variables for next swing
                     simState = 'idle';
                     simData.clubX = -15;
+                    simData.clubY = 0;
                     simData.impactDuration = 0;
-                    club.position.set(simData.clubX, 0, 0);
+                    club.position.set(simData.clubX, simData.clubY, 0);
                     club.rotation.z = 0;
                     ballGroup.position.set(0, 0, 0);
                     ballGroup.rotation.z = 0;
                     
-                    // Force atoms back instantly
                     atoms.forEach(atom => {
                         atom.position.copy(atom.userData.originalPos);
                         atom.material.color.setHex(0x64748b);
                     });
                     document.getElementById('stressRead').innerText = "0.0%";
-                    return; // Skip rest of frame
+                    return; 
                 }
             }
 
             // --- Unified Atom Physics (Squish + Shockwave) ---
             if (simState === 'impact' || simState === 'flying') {
                 if (simData.waveActive) {
-                    simData.waveRadius += baseSpeed * 10.0; // Wave propagation speed
+                    // Wave propagation speed is integrated with dt
+                    simData.waveRadius += 14.0 * dt; 
                     if (simData.waveRadius > BALL_RADIUS * 4) {
-                        simData.waveActive = false; // Wave dissipated
+                        simData.waveActive = false; 
                     }
                 }
 
                 let maxStress = 0;
-                const epicenter = new THREE.Vector3(-BALL_RADIUS, 0, 0); // Left side impact point
+                const epicenter = new THREE.Vector3(-BALL_RADIUS, 0, 0); 
 
                 atoms.forEach(atom => {
                     let targetPos = atom.userData.originalPos.clone();
                     let stressLevel = 0;
 
-                    // 1. Club Face Squish (only in impact phase)
                     if (simState === 'impact') {
                         let worldX = ballGroup.position.x + atom.userData.originalPos.x;
                         let clubFaceX = simData.clubX + 0.8;
                         if (worldX < clubFaceX) {
                             let push = clubFaceX - worldX;
-                            targetPos.x += push; // Push atom inward
+                            targetPos.x += push; 
                             stressLevel = Math.max(stressLevel, push * 0.4);
                             if (push > maxStress) maxStress = push;
                         }
                     }
 
-                    // 2. Internal Acoustic Shockwave
                     if (simData.waveActive) {
                         let distToEpicenter = atom.userData.originalPos.distanceTo(epicenter);
                         let diffFromWave = Math.abs(distToEpicenter - simData.waveRadius);
                         let waveWidth = 1.2; 
                         
                         if (diffFromWave < waveWidth) {
-                            // Calculate wave intensity based on distance from wave peak
                             let intensity = 1.0 - (diffFromWave / waveWidth);
-                            // Wave loses energy as it travels further across the ball
                             let decay = Math.max(0, 1.0 - (distToEpicenter / (BALL_RADIUS * 2.5)));
                             let force = intensity * decay * (simData.forceInput / 5); 
                             
-                            // Displace atom outward from the epicenter
                             let dir = atom.userData.originalPos.clone().sub(epicenter).normalize();
                             targetPos.add(dir.multiplyScalar(force * 0.6));
                             
@@ -312,20 +441,17 @@
                         }
                     }
 
-                    // Lerp atom towards its target position (fast snap for squish, smooth for wave/elasticity)
-                    let lerpSpeed = (simState === 'impact' && stressLevel > 0.1) ? 0.8 : (0.15 * baseSpeed);
+                    // Lerp speed dynamically adjusts to dt to ensure deformation snaps/relaxes correctly in slow-mo
+                    let lerpSpeed = (simState === 'impact' && stressLevel > 0.1) ? 0.8 : Math.min(1.0, 4.0 * dt);
                     atom.position.lerp(targetPos, lerpSpeed);
 
-                    // Heatmap Color Transition
-                    let targetColor = new THREE.Color(0x64748b); // Default Slate Blue
+                    let targetColor = new THREE.Color(0x64748b);
                     if (stressLevel > 0) {
-                        // High stress = Red (0.0), Low stress = Green/Blue (0.6)
                         targetColor.setHSL(0.6 - (Math.min(stressLevel, 1) * 0.6), 0.9, 0.5);
                     }
-                    atom.material.color.lerp(targetColor, lerpSpeed * 1.5);
+                    atom.material.color.lerp(targetColor, Math.min(1.0, 5.0 * dt));
                 });
 
-                // Update UI Readout
                 if (simState === 'impact') {
                     document.getElementById('stressRead').innerText = (maxStress * 25).toFixed(1) + "%";
                 } else if (simState === 'flying' && !simData.waveActive) {
@@ -343,9 +469,11 @@
 
         window.addEventListener('resize', () => {
             const container = document.getElementById('canvas-container');
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            if(container && container.clientWidth > 0) {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
         });
 
         document.getElementById('impactBtn').addEventListener('click', handleImpact);
