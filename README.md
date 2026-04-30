@@ -1,118 +1,49 @@
-🧪 Atomic Golf Impact real-time 3D and physics simulation of golf ball impact and flight.This project simulates the full lifecycle of a golf shot, focusing on high-fidelity visual and physical accuracy. It features:Impact deformation (particle-based mechanics)Energy transfer through the ballProjectile motion with real physics constraintsDynamic trajectory visualization.
+An Overview and Technical Preview of Our True-Scale Impact Simulation Lab
 
-🚀 Quickstart To get the simulation running locally on your machine:Bashgit clone https://github.com/rfallison25-cell/Final-Project
-open index.html
+At first glance, a golf swing appears to be a simple application of physics. You swing and the club strikes a ball, and the ball flies through the air until gravity brings it back to the turf. However, this simple minded view completely ignores the molecular displacement that occurs in the fraction of a millisecond during impact. To bridge this massive gap between atomic scale deformation and actual trajectory, we created ATOM-STRUC v3.1. This project is a fully interactive, web-based, 3D physics engine and 2D flight mapping tool. We designed this to visualize the impact and velocity from different club selections. We wanted to see exactly how kinetic energy transfers through a molecular lattice and how aerodynamics influence the flight.
 
+The Vision and Significance
 
-
-⚙️ Core ArchitectureThe system is split into two synchronized engines that run off the same dynamic inputs:3D Physics Engine (Three.js)2D Trajectory Engine (SVG + math)Both engines are driven by user-defined parameters:
-
-let mph = parseFloat(document.getElementById('impactSpeedMph').value) || 100;
-let clubKey = document.getElementById('clubSelect').value;
-let clubParams = CLUBS[clubKey];
+The main goal of this project was to build a learning tool that works directly in a browser without needing extra physics software. We aimed to build a realistic scaled environment which is often difficult to do while keeping mathematical accuracy. In our 3D design, the environment scales with the user's input, making 1 unit of space represent 1 yard of real-world distance. The importance of our project is in its dual-view approach. We created it to where there was a 3D impact lab and also a physics & flight path view. gives the user the ability to see the difference in impacts and how it directly impacts the flight of a ball.
 
 
-🧱 Particle-Based Golf BallInstead of a single static mesh, the ball is composed of thousands of individual particles. This creates a dense, realistic structure for calculating deformation.JavaScript
+<img width="1903" height="905" alt="Screenshot 2026-04-29 194110" src="https://github.com/user-attachments/assets/ee1ce8f1-57c6-4de2-a71e-5ae7b5191bf7" />
 
-const ATOM_COUNT = 3500;
-const BALL_RADIUS = 4.0;
+Step 1: Applying Foundational Kinematics
 
-Each particle stores its original position to ensure it can snap back or deform accurately.
-
-atom.userData = { originalPos: atom.position.clone() };
-Particles are mathematically distributed in a spherical volume to ensure even density:JavaScriptconst phi = Math.acos(-1 + (2 * i) / ATOM_COUNT);
-const theta = Math.sqrt(ATOM_COUNT * Math.PI) * phi;
+The foundation of our project relied on understanding kinematics and also classical mechanics. Before writing a single line of 3D code, we decided to get a good understanding by going out golfing on symposium day.
+After, we went and hit the lab. We decided to make our ball be hit from a vacuum. In a vacuum, a launched projectile follows a perfect parabola issued by its initial velocity. The launch angle was dictated by the club's loft, and also the constant downward acceleration of gravity. Using standard kinematic equations, distance can be calculated if the initial vectors are known. 
+However, we wanted to ensure we could put any MPH we wanted and it would resemble directly to realistic golf yardages. To achieve this, we mapped specific club lofts and assigned distance multipliers for each club. By calculating the necessary x, y, and z velocity vectors based on the club's angle, we ensured that the moment the ball detached from the clubface, it followed gravity's laws.
 
 
 
-💥 Impact & Deformation LogicDuring impact, each particle's position is checked against the club face. This logic produces realistic compression, flattening against the club face, and directional force response.
+<img width="1337" height="626" alt="Screenshot 2026-04-29 194222" src="https://github.com/user-attachments/assets/0d9ebec0-232c-4dc9-b00d-ad77ae85fbaa" />
 
-let worldX = ballGroup.position.x + atom.userData.originalPos.x;
-let clubFaceX = simData.clubX + 0.8;
+Step 2: Engineering the Molecular Dynamics (Soft-Body Physics)
 
-if (worldX < clubFaceX) {
-    let push = clubFaceX - worldX;
-    targetPos.x += push;
-}
+The most ambitious step of ATOM-STRUC was visualizing the ball not as a rigid sphere, but as a dense lattice of thousands of individual polymer chains. We utilized Three.js to generate a sphere composed of 3,500 distinct atomic particles.
+
+Instead of making the atoms bounce off each other, we created a shockwave algorithm. When the clubhead's x-coordinate intersects the ball's radius, the impact state triggers. We calculate a "push" distance to flatten the atoms against the invisible boundary of the clubface. Simultaneously, a wave radius expands outward from an epicenter at the point of impact. We calculate each atom's distance to this expanding wave, applying an intensity and decay modifier based on the inverse-square law of energy dissipation.
 
 
-
-🌊 Shockwave PropagationEnergy travels through the ball using a radial wave. Force is applied to individual particles based on their distance from the shockwave's epicenter.
-simData.waveRadius += 14.0 * dt;
-
-let distToEpicenter = atom.userData.originalPos.distanceTo(epicenter);
-let diffFromWave = Math.abs(distToEpicenter - simData.waveRadius);
-
-let intensity = 1.0 - (diffFromWave / waveWidth);
-let force = intensity * decay * (simData.mph / 20);
-
-
-🎨 Stress VisualizationMaterial stress during impact is mapped to color using HSL interpolation, where Blue indicates low stress and Red indicates high stress.
-
-targetColor.setHSL(
-  0.6 - (Math.min(stressLevel, 1) * 0.6),
-  0.9,
-  0.5
-);
+To translate this data into visual feedback, we implemented a color system. As the kinetic force displaces an atom, its stress level spikes, shifting its material color from a neutral slate to red. As the wave passes and the atom snaps back to its original position. down. This allows users to actually watch the kinetic energy ripple through the ball's core.
 
 
 
-🚀 Launch Physics & Flight SimulationThe simulation calculates the exact required launch velocity to ensure the ball lands at the correct mathematical distance based on the club loft and speed inputs, The equatin used is
+<img width="1892" height="929" alt="Screenshot 2026-04-29 194130" src="https://github.com/user-attachments/assets/2fbecaf0-8422-430c-bf85-9abecb6c9283" />
 
-v= (Dg/sin(20)^1/2
+Step 3: Aerodynamics and the Magnus Effect.
 
-
-Once airborne, motion and gravity are applied continuously per frame.
-ballGroup.position.x += simData.ballVel.x * dt;
-ballGroup.position.y += simData.ballVel.y * dt;
-simData.ballVel.y -= GRAVITY * dt;
+While the 3D lab focuses on the small scale impact, the second part of our project involved larger level flight physics. To demonstrate the flight of a ball we built a SVG based trajectory graph. To do this we had to calculate the drag and lift of a golf ball. Drag acts against the ball’s velocity, growing exponentially with speed. Lift acts perpendicular to the flight path. Because a golf club creates massive backspin on the ball, the dimples grab air which makes a low pressure zone above the ball and generates lift, much like a plane wing. This is known as the Magnus effect. By using these forces we were able to make an accurate trajectory for the flight of a ball. It climbs steeply, hangs, and drops at a sharp angle. We designed the graph to change dynamically based on the user's input, mapping 4 pixels to each yard of distance, ensuring the scale stayed consistent over multiple trials.
 
 
 
-🎯 Landing CorrectionTo eliminate floating-point drift and ensure perfect accuracy (and alignment with the 2D graph), the final position is snapped to the exact carry value.
+<img width="1579" height="757" alt="Screenshot 2026-04-29 194315" src="https://github.com/user-attachments/assets/7c095893-7d52-4dff-a0f9-1203d83b1cd7" />
 
-let exactCarry = simData.mph * clubParams.multiplier;
-ballGroup.position.x = exactCarry;
+Step 4: Bringing it Together with Modern UI
 
-
-📈 Trajectory Graph (SVG)The trajectory is plotted dynamically alongside the 3D simulation to provide analytical feedback.Parabolic Path Calculation.
-
-pathPara.setAttribute(
-  'd',
-  `M ${START_X} ${GROUND_Y} Q ${START_X + paraPx/2} ${GROUND_Y - (apexPx * 1.2)} ${START_X + paraPx} ${GROUND_Y}`
-);
-Real Flight (Bezier curve adjusting for Magnus effect):JavaScriptpathMagnus.setAttribute(
-  'd',
-  `M ${START_X} ${GROUND_Y} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${GROUND_Y}`
-);
+The final step was to make it actually look functional and nice. There are complex calculations in a very easy to use website called Tailwind CSS that kept the modern look we were going for. We even included small but great features like the time scaler. This let us slow down the simulation to watch the atomic compression in slow motion, and also in real time. Another feature was the data readouts for analysing the peak stress and carry yardage as well. By carefully managing the state of the simulation we ensured the application feels stable and also useful.
 
 
+<img width="1885" height="918" alt="Screenshot 2026-04-29 194210" src="https://github.com/user-attachments/assets/477e1aa7-a8a3-416a-a285-9c665ea304e0" />
 
-🔁 Animation Loop & InteractivityThe system utilizes a continuous animation loop to keep the physics updating, rendering smooth, and the UI responsive.
-function animate() {
-    requestAnimationFrame(animate);
-    updatePhysics();
-    controls.update();
-    renderer.render(scene, camera);
-}
-User inputs actively alter the physics state and trigger the swing mechanics:
-
-document.getElementById('impactBtn').addEventListener('click', () => {
-    simData.mph = parseFloat(document.getElementById('impactSpeedMph').value);
-    simState = 'swinging';
-});
-
-
-
-
-🧠 Engineering TakeawaysParticle Systems: Can effectively approximate complex material deformations without the overhead of soft-body mesh physics. Real-time physics requires continuous mathematical integration (frame-by-frame updates).Synchronization: Visual models must stay strictly synchronized with mathematical models to maintain illusion and accuracy.Precision: Small corrections (like the landing snap) are critical for overriding floating-point errors.
-
-⚠️ Limitations & 🔮 Future WorkAreaCurrent LimitationPlanned Future WorkAerodynamicsSimplified Magnus effect; no wind or spin decay.Implement real aerodynamic modeling, spin rate (RPM) variables, and wind simulation.PhysicsApproximate material physics; no full fluid dynamics.Integrate GPU-accelerated particle optimization for denser, more accurate deformation calculations.
-
-
-🛠️ Tech StackFrontend: 
-HTML 
-CSS3 (Tailwind)Logic 
-Vanilla JavaScript3D Rendering 
-Three.js 2D Visualization 
-Scalable Vector Graphics (SVG)
